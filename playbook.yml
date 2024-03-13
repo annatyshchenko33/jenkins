@@ -1,0 +1,61 @@
+---
+- name: Server Setup
+  hosts: localhost
+  become: true
+  tasks:
+    - name: Update system
+      apt:
+        update_cache: yes
+        upgrade: yes
+      tags: update
+
+    - name: Install nginx
+      apt:
+        name: nginx
+        state: present
+      tags: nginx
+
+    - name: Update Nginx config files
+      copy:
+        src: /etc/nginx/nginx.conf
+        dest: /etc/nginx/nginx.conf
+      notify: reload nginx
+      tags: nginx
+
+    - name: Link nginx config
+      file:
+        src: /etc/nginx/sites-available/default
+        dest: /etc/nginx/sites-enabled/default
+        state: link
+      notify: reload nginx
+      tags: nginx
+
+
+    - name: Install OpenVPN
+      apt:
+        name: openvpn
+        state: present
+      tags:
+        - openvpn
+
+    - name: Download openvpn-install.sh script
+      get_url:
+        url: https://raw.githubusercontent.com/angristan/openvpn-install/master/openvpn-install.sh
+        dest: /tmp/openvpn-install.sh
+      tags:
+        - openvpn
+
+    - name: Make openvpn-install.sh executable
+      file:
+        path: /tmp/openvpn-install.sh
+        mode: +x
+      tags:
+        - openvpn
+
+    
+
+  handlers:
+    - name: reload nginx
+      service:
+        name: nginx
+        state: reloaded
